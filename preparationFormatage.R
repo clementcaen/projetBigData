@@ -27,11 +27,11 @@ data["date"] <- convertDate(data["date"])
 data["id_code_insee"] <- convertNumeric(data["id_code_insee"])
 data["latitude"] <- convertNumeric(data["latitude"])
 data["longitude"] <- convertNumeric(data["longitude"])
-data["an_nais"] <- convertDate(data["an_nais"])
+data["an_nais"] <- convertNumeric(data["an_nais"])
 data["age"] <- convertNumeric(data["age"])
 data["place"] <- convertNumeric(data["place"])
+print(data$date)
 
-print(data)
 print("Conversion réussi")
 print("CHLOE")
 
@@ -41,20 +41,22 @@ print("CHLOE")
 #                      données ci-dessous)
 # on creer un tableau avec les données du nombre d'habitant par commune https://www.insee.fr/fr/statistiques/2044741
 stat_pop <- read.csv("base-cc-evol-struct-pop-2009.csv", sep=';')
-print(stat_pop)
+#print(stat_pop)
 # P09_POP: population | CODGEO: code insee | REG: id_region
 # On groupe par région avec la sommme des habitants des villes (total d'habitant par région) et les divisant par 100 000 pour avoir les données pour 100 000 habitant
 total_pop <- aggregate(P09_POP ~ REG, data = stat_pop, FUN = sum)
 pop100000_by_reg <- NULL
-pop100000_by_reg = data.frame(total_pop$REG, total_pop$P09_POP /100000)
-print(pop100000_by_reg)
+pop100000_by_reg <- data.frame(total_pop$REG, total_pop$P09_POP /100000)
+#print(pop100000_by_reg)
 # On trouve tous les accidents dans la région en mergeant les 2 tableaux
-names(pop100000_by_reg)[pop100000_by_reg == "CODGEO"] <- "id_code_insee"
-merging_tableau <- merge(total_pop, data, by="id_code_insee")
-print(merging_tableau)
+stat_pop$id_code_insee <- stat_pop$CODGEO
+
+merging_tableau <- merge(total_pop, data, by="id_code_insee", all.x = TRUE) # all x = True permet de merge avec data qui contient plusieurs fois le même code insee et total_pop avec un code insee par ligne
+
+#print(merging_tableau)
 # on groupe par région les accidents
 accid_by_reg <- aggregate(place ~ REG, data = merging_tableau, FUN = sum) # on somme les personnes touchés par l'accidents (place) pour connaitre le nombre d'affecté par les accident par région
-print(accid_by_reg)
+#print(accid_by_reg)
 # On trie par gravité ? (histogramme)
 
 
