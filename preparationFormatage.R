@@ -1,4 +1,4 @@
-# on importe à la main
+# on importe
 library(datasets)
 stat_acc_V3 <- read.csv("stat_acc_V3.csv", sep=';')
 data <- stat_acc_V3
@@ -12,11 +12,26 @@ convertDate <- function (colonneCsv){
   }
   return(new_date)
 }
+convertNumeric <- function (colonneCsv){
+  new_num <- NULL
+  for (each_number in colonneCsv){
+    new_num <- append(new_num, as.double(each_number))
+  }
+  return(new_num)
+}
+# conversion colonnes non multi-modales
+data["Num_Acc"] <- convertNumeric(data["Num_Acc"])
+data["id_usa"] <- convertNumeric(data["id_usa"])
 data["date"] <- convertDate(data["date"])
-print(data["date"])
+data["id_code_insee"] <- convertNumeric(data["id_code_insee"])
+data["latitude"] <- convertNumeric(data["latitude"])
+data["longitude"] <- convertNumeric(data["longitude"])
+data["an_nais"] <- convertDate(data["an_nais"])
+data["age"] <- convertNumeric(data["age"])
+data["place"] <- convertNumeric(data["place"])
+
+print(data)
 print("Conversion réussi")
-
-
 
 
 
