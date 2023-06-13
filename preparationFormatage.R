@@ -32,6 +32,6 @@ data["place"] <- convertNumeric(data["place"])
 
 print(data)
 print("Conversion réussi")
-
+print("CHLOE")
 
 
