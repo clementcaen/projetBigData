@@ -22,7 +22,7 @@ convertNumeric <- function (colonneCsv){
 data["Num_Acc"] <- convertNumeric(data["Num_Acc"])
 data["id_usa"] <- convertNumeric(data["id_usa"])
 data["date"] <- convertDate(data["date"])
-data["id_code_insee"] <- convertNumeric(data["id_code_insee"])
+#data["id_code_insee"] <- convertNumeric(data["id_code_insee"]) # on ne les convertis pas à cause de la Corse (2A)
 data["latitude"] <- convertNumeric(data["latitude"])
 data["longitude"] <- convertNumeric(data["longitude"])
 data["an_nais"] <- convertNumeric(data["an_nais"])
@@ -73,7 +73,6 @@ convert_tableau<- function(donnee){
 data <- convert_tableau(data)
 
 #Chloé préparation.4
-
 library(dplyr) # manipulation de donnée
 library(ggplot2) # réalisation de graphique
 # Charger les données depuis le fichier CSV
@@ -113,23 +112,35 @@ ggplot(weekly_data, aes(x = as.Date(paste0(week, "-1"), "%Y-%U-%u"), y = total_a
 
 # Clément 1.5 (bonus)
 # on creer un tableau avec les données du nombre d'habitant par commune https://www.insee.fr/fr/statistiques/2044741
-#stat_pop <- read.csv("base-cc-evol-struct-pop-2009.csv", sep=';')
+stat_pop <- read.csv("base-cc-evol-struct-pop-2009.csv", sep=';')
 # P09_POP: population | CODGEO: code insee | REG: id_region
 
 # On groupe par région avec la sommme des habitants des villes (total d'habitant par région) et les divisant par 100 000 pour avoir les données pour 100 000 habitant
-#total_pop <- aggregate(P09_POP ~ REG, data = stat_pop, FUN = sum)
-#pop100000_by_reg <- NULL
-#pop100000_by_reg <- data.frame(total_pop$REG, total_pop$P09_POP /100000)
+total_pop <- aggregate(P09_POP ~ REG, data = stat_pop, FUN = sum)
+pop100000_by_reg <- NULL
+pop100000_by_reg <- data.frame(total_pop$REG, total_pop$P09_POP /100000)
 #print(pop100000_by_reg)
 
 # On trouve tous les accidents dans la région en mergeant les 2 tableaux
-#stat_pop$id_code_insee <- stat_pop$CODGEO
-#merging_tableau <- merge(total_pop, data, by="id_code_insee")
 
-#print(merging_tableau)
+# on rajoute les code insee correspondnt au code geo (CODGEO : Code du département suivi du numéro de commune ou du numéro d'arrondissement municipal /source:https://www.insee.fr/fr/statistiques/2044741#dictionnaire)
+# Le code insee de chaque commune/ville/village est constitué de 5 chiffres, les 2 premiers sont le numéro du département (codé sur 2 chiffres) à laquelle la ville est rattachée et les 3 autres chiffres sont un code donné à la commune (codée sur 3 chiffres).
+codegeo_to_insee <- function (codegeo){
+  code_departement <- substr(codegeo, 1, 2)
+  code_commune <- substr(codegeo, 3, nchar(codegeo))
+
+  return (paste0(code_departement, code_commune))
+}
+stat_pop$id_code_insee <- NULL
+for (codegeo in stat_pop$CODGEO){
+  print(codegeo)
+  print(codegeo_to_insee(codegeo))
+}
+
+merging_tableau <- merge(total_pop, data, by="id_code_insee")
 
 # on groupe par région les accidents
-#accid_by_reg <- aggregate(place ~ REG, data = merging_tableau, FUN = sum) # on somme les personnes touchés par l'accidents (place) pour connaitre le nombre d'affecté par les accident par région
+accid_by_reg <- aggregate(place ~ REG, data = merging_tableau, FUN = sum) # on somme les personnes touchés par l'accidents (place) pour connaitre le nombre d'affecté par les accident par région
 #print(accid_by_reg)
 
 # On trie par gravité ? (histogramme)
@@ -153,7 +164,7 @@ regions <- list(
   bretagne = c(22, 29, 35, 56),
   centre = c(18, 28, 36, 37, 41, 45),
   champagne = c(8, 10, 51, 52),
-  corse = c(2A, 2B),
+  #corse = c(2A, 2B),
   franche_comte = c(25, 39, 70, 90),
   ile_de_france = c(75, 77, 78, 91, 92, 93, 94, 95),
   languedoc_roussillon = c(11, 30, 34, 48, 66),
