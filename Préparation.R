@@ -106,6 +106,14 @@ ggplot(weekly_data, aes(x = as.Date(paste0(week, "-1"), "%Y-%U-%u"), y = total_a
   geom_line() +
   labs(x = "Semaine", y = "Nombre d'accidents", title = "Évolution hebdomadaire du nombre d'accidents")
 
+# Agréger les données par mois
+monthly_aggregated <- aggregate(nombre_accidents ~ format(date, "%Y-%m"), data = data, FUN = sum)
+print(monthly_aggregated)
+
+# Agréger les données par semaine
+weekly_aggregated <- aggregate(nombre_accidents ~ format(date, "%Y-%U"), data = data, FUN = sum)
+print(weekly_aggregated)
+
 
 #print(data)
 
@@ -263,27 +271,136 @@ print(rmse_weekly)
 
 #Analyser des erreurs types associés aux estimateurs 
 
-# Mensuel
+#erreur absolue moyenne mensuelle 
 
-library(dplyr)
-library(ggplot2)
-library(forecast)
-# Calculer les erreurs types associées aux estimateurs pour les données mensuelles
-monthly_errors <- summary(lm_monthly)$coef[, "Std. Error"]
-# Afficher les erreurs types associées aux estimateurs pour les données mensuelles
-cat("Erreurs types associées aux estimateurs pour les données mensuelles:\n")
-print(monthly_errors)
-
-# weekly
+# Charger les bibliothèques nécessaires
 library(dplyr)
 library(ggplot2)
 library(forecast)
 
-# Calculer les erreurs types associées aux estimateurs pour les données hebdomadaires
-weekly_errors <- summary(lm_weekly)$coef[, "Std. Error"]
-# Afficher les erreurs types associées aux estimateurs pour les données hebdomadaires
-cat("Erreurs types associées aux estimateurs pour les données hebdomadaires:\n")
-print(weekly_errors)
+# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
+data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+
+# Convertir la colonne "date" en type "Date"
+data$date <- as.Date(data$date)
+
+# Créer la série chronologique par mois
+monthly_data <- data %>%
+  mutate(month = format(date, "%Y-%m")) %>%
+  group_by(month) %>%
+  summarise(total_accidents = n())
+
+# Ajuster un modèle de régression linéaire pour les données mensuelles
+lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
+
+# Prédictions du modèle pour les données mensuelles
+predictions_monthly <- predict(lm_monthly)
+
+# Calcul de l'erreur absolue moyenne (MAE) pour les données mensuelles
+mae_monthly <- mean(abs(monthly_data$total_accidents - predictions_monthly))
+
+# Afficher l'erreur absolue moyenne pour les données mensuelles
+cat("Erreur absolue moyenne (MAE) pour les données mensuelles :", mae_monthly)
+
+
+# erreur absolue moyenne hebdomadaire
+
+
+# Charger les bibliothèques nécessaires
+library(dplyr)
+library(ggplot2)
+library(forecast)
+
+# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
+data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+
+# Convertir la colonne "date" en type "Date"
+data$date <- as.Date(data$date)
+
+weekly_data <- data %>%
+  mutate(week = format(date, "%Y-%W")) %>%
+  group_by(week) %>%
+  summarise(total_accidents = n())
+
+
+# Régression linéaire pour l'agrégation hebdomadaire
+lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
+predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
+
+
+# Calcul de l'erreur absolue moyenne (MAE) pour les données mensuelles
+mae_weekly <- mean(abs(weekly_data$total_accidents - predicted_weekly))
+
+# Afficher l'erreur absolue moyenne pour les données mensuelles
+cat("Erreur absolue moyenne (MAE) pour les données hebdomadaires :", mae_weekly)
+
+# erreur relative hebdomadaire 
+
+# Charger les bibliothèques nécessaires
+library(dplyr)
+library(ggplot2)
+library(forecast)
+
+# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
+data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+
+# Convertir la colonne "date" en type "Date"
+data$date <- as.Date(data$date)
+
+# Créer la série chronologique par semaine
+weekly_data <- data %>%
+  mutate(week = format(date, "%Y-%W")) %>%
+  group_by(week) %>%
+  summarise(total_accidents = n())
+
+# Fractionner les données en ensembles d'entraînement et de test
+train_weekly <- weekly_data[1:40, ]  # Remplacez les indices appropriés selon votre configuration de données
+test_weekly <- weekly_data[41:52, ]  # Remplacez les indices appropriés selon votre configuration de données
+
+# Régression linéaire pour l'agrégation hebdomadaire
+lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
+predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
+
+# Calcul de l'erreur relative pour les données hebdomadaires
+relative_error_weekly <- abs((weekly_data$total_accidents - predicted_weekly) / weekly_data$total_accidents)
+
+# Afficher l'erreur relative pour les données hebdomadaires
+cat("Erreur relative pour les données hebdomadaires :", mean(relative_error_weekly))
+
+# erreur relative mensuelle
+
+# Charger les bibliothèques nécessaires
+library(dplyr)
+library(ggplot2)
+library(forecast)
+
+# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
+data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+
+# Convertir la colonne "date" en type "Date"
+data$date <- as.Date(data$date)
+
+# Créer la série chronologique par mois
+monthly_data <- data %>%
+  mutate(month = format(date, "%Y-%m")) %>%
+  group_by(month) %>%
+  summarise(total_accidents = n())
+
+# Fractionner les données en ensembles d'entraînement et de test
+train_monthly <- monthly_data[1:6, ]  # Remplacez les indices appropriés selon votre configuration de données
+test_monthly <- monthly_data[7:12, ]  # Remplacez les indices appropriés selon votre configuration de données
+
+# Régression linéaire pour l'agrégation mensuelle
+lm_monthly <- lm(total_accidents ~ as.Date(paste0(month, "-01"), format = "%Y-%m-%d"), data = train_monthly)
+predicted_monthly <- predict(lm_monthly, newdata = test_monthly) # Prédictions mensuelles
+
+# Calcul de l'erreur relative pour les données mensuelles
+relative_error_monthly <- abs((monthly_data$total_accidents - predicted_monthly) / monthly_data$total_accidents)
+
+# Afficher l'erreur relative pour les données mensuelles
+cat("Erreur relative mensuelle :", mean(relative_error_monthly))
+
+
 
 
 # Calculer les intervalles de confiance à 95% pour ces estimateurs 
