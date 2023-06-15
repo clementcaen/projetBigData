@@ -7,9 +7,8 @@ library(leaflet)
 library(geojsonio)
 # représentation sous formes de carte de la quantité d’accidents enregistrés par région puis par départements
 
-# fonction isin venant d'elsa
 isin <- function(x, values) {
-  match(x, values, nomatch = 0) > 0
+  return (x %in% values)
 }
 
 regions <- list(
@@ -37,10 +36,12 @@ regions <- list(
     rhone_alpes = c("01", "07", "26", "38", "42", "69", "73", "74")
 )
 # Clément (aide Marzhin)
-acc_region <- function(donnee){
+j <- 0
+acc_region <- function(donnee, nb_ligne){
   # on fait la carte
   donnee$region <- ""
-  for (i in seq_along(donnee)){
+  for (i in 1:nb_ligne){
+    j <- j + 1
     each_code <- donnee$id_code_insee[i]
     dep <- substring(each_code, 1, 2) # on récupère les 2 premier caractère du code insee
     for (reg_name in names(regions)){
@@ -49,11 +50,6 @@ acc_region <- function(donnee){
         #print("Met la regions")
         #print(each_region)
         donnee$region[i] <- reg_name
-        if(i == 23){
-          print("Met la regions")
-          print(each_region)
-          print(reg_name)
-        }
       }
     }
     donnee$dep[i] <- dep
@@ -132,7 +128,7 @@ convert_tableau<- function(donnee){
 }
 data <- convert_tableau(data)
 
-data <- acc_region(data)
+data <- acc_region(data,  nrow(data))
 
 # Pour chaque region on fait la somme des accidents
 acc_by_reg <- table(data$region)
@@ -141,14 +137,12 @@ acc_by_reg <- table(data$region)
 # Documentation pour R: https://rstudio.github.io/leaflet/json.html
 geo_region_json <- geojson_read("regions.geojson")
 geo_dep_json <- geojson_read("departements.geojson")
-
 data_gouv_dep_csv <- read.csv("points-extremes-des-departements-metropolitains-de-france.csv")
 
 # histogramme accident par region
-
-
+middle_dep_lat <- NULL
+middle_dep_lon <- NULL
 #pour toutes les régions
-      #if(isin(dep, each_region)){ # regarde si le departement(dep) est dans cette region(each_region)
 middle_dep_lat[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Latitude.la.plus.au.nord + data_gouv_dep_csv$Latitude.la.plus.au.sud) / 2
 middle_dep_lon[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Longitude_est + data_gouv_dep_csv$Longitude_ouest) / 2
 
@@ -163,7 +157,7 @@ lon_reg <- c(5.619444, 0.197778, 4.538056, 4.809167, -2.838611,
 lat_reg <- c(48.68917, 45.19222, 45.51583, 47.23528, 48.17972,
                         47.48056, 42.14972, 48.70917, 43.70222, 49.96611,
                         49.12111, 47.47472, 43.95500)
-# construction des tazbleaux de données pour la carte qui contient lon | lat | nb d'accident
+# construction des tableaux de données pour la carte qui contient lon | lat | nb d'accident
 i <- 0
 for (reg_name in names(regions)){
   i <- i + 1
