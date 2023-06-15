@@ -39,7 +39,7 @@ regions <- list(
 # Clément (aide Marzhin)
 acc_region <- function(donnee){
   # on fait la carte
-  data$region <- ""
+  donnee$region <- ""
   for (i in seq_along(donnee)){
     each_code <- donnee$id_code_insee[i]
     dep <- substring(each_code, 1, 2) # on récupère les 2 premier caractère du code insee
@@ -49,8 +49,14 @@ acc_region <- function(donnee){
         #print("Met la regions")
         #print(each_region)
         donnee$region[i] <- reg_name
+        if(i == 23){
+          print("Met la regions")
+          print(each_region)
+          print(reg_name)
+        }
       }
     }
+    donnee$dep[i] <- dep
   }
   return (donnee)
 }
@@ -134,40 +140,57 @@ acc_by_reg <- table(data$region)
 # Carte avec fleatlet
 # Documentation pour R: https://rstudio.github.io/leaflet/json.html
 geo_region_json <- geojson_read("regions.geojson")
+geo_dep_json <- geojson_read("departements.geojson")
 
 data_gouv_dep_csv <- read.csv("points-extremes-des-departements-metropolitains-de-france.csv")
 
 # histogramme accident par region
 
 
-# moyenne des latitudes, longitudes pour toute les départements
-middle_dep_lat <- data_gouv_dep_csv$LongitudeNord-data_gouv_dep_csv$LongitudeSud
-middle_dep_lon <- data_gouv_dep_csv$LatitudeNord-data_gouv_dep_csv$LatitudeSud
 #pour toutes les régions
       #if(isin(dep, each_region)){ # regarde si le departement(dep) est dans cette region(each_region)
+middle_dep_lat[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Latitude.la.plus.au.nord + data_gouv_dep_csv$Latitude.la.plus.au.sud) / 2
+middle_dep_lon[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Longitude_est + data_gouv_dep_csv$Longitude_ouest) / 2
 
-tableau_data_reg_stat <- data.frame(lon, lat )
+dep_list <- data_gouv_dep_csv$Departement
+
+tableau_data_reg_stat <- NULL
+tableau_data_dep_stat <- NULL
+
+lon_reg <- c(5.619444, 0.197778, 4.538056, 4.809167, -2.838611,
+                         1.685278, 9.105278, 2.504722, 2.137222, 2.775278,
+                         0.106667, -0.823889, 6.053333)
+lat_reg <- c(48.68917, 45.19222, 45.51583, 47.23528, 48.17972,
+                        47.48056, 42.14972, 48.70917, 43.70222, 49.96611,
+                        49.12111, 47.47472, 43.95500)
 # construction des tazbleaux de données pour la carte qui contient lon | lat | nb d'accident
-for (i in seq_along(regions)){
-  each_reg <- regions$reg[i]
+i <- 0
+for (reg_name in names(regions)){
+  i <- i + 1
+  each_region <- regions[[reg_name]]
   # region
-
-  # departement
-  tableau_data_reg_stat$lon <- middle_dep_lon
-  tableau_data_reg_stat$lat <- middle_dep_lat
-
+  tableau_data_reg_stat$lon <- append(tableau_data_reg_stat$lon, lon_reg[i])
+  tableau_data_reg_stat$lat <- append(tableau_data_reg_stat$lat, lat_reg[i])
+  tableau_data_reg_stat$nb <- append(tableau_data_reg_stat$nb, sum(data$region == reg_name))
 }
+for (dep in dep_list){
+  # departement
+  tableau_data_dep_stat$lon <- append(tableau_data_dep_stat$lon, middle_dep_lon[dep])
+  tableau_data_dep_stat$lat <- append(tableau_data_dep_stat$lat, middle_dep_lat[dep])
+  tableau_data_dep_stat$nb <- append(tableau_data_dep_stat$nb, sum(data$dep == dep))
+}
+#print(tableau_data_reg_stat)
 
-map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
-  addTiles() %>%
-  addGeoJSON(geo_region_json)
-  addMarkers(data = , lng = ~(2), lat = ~(2), label = ~Freq) # donne les points pour chaque region
-map
+#map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
+#  addTiles() %>%
+#  addGeoJSON(geo_region_json) %>%
+#  addMarkers(data = tableau_data_reg_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
+#map
 
 
 # departement
 map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
   addTiles() %>%
-  addGeoJSON(geo_dep_json)
-  addMarkers(data = , lng = ~(2), lat = ~(23), label = ~Freq) # donne les points pour chaque region
+  addGeoJSON(geo_dep_json) %>%
+  addMarkers(data = tableau_data_dep_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
 map

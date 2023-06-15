@@ -2,6 +2,8 @@ library(datasets)
 stat_acc_V3 <- read.csv("stat_acc_V3.csv", sep=';')
 data <- stat_acc_V3
 
+
+
 # Clément 1.2
 # Mettre les variables numériques sous format numériques, date sous format date
 convertDate <- function (colonneCsv){
@@ -76,7 +78,7 @@ data <- convert_tableau(data)
 library(dplyr) # manipulation de donnée
 library(ggplot2) # réalisation de graphique
 # Charger les données depuis le fichier CSV
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+data <- read.csv("stat_acc_V3.csv", sep=";")
 # Convertir la colonne "date" en type "Date"
 data$date <- as.Date(data$date)
 
