@@ -5,12 +5,12 @@
 library(sf)
 library(leaflet)
 library(geojsonio)
-# représentation sous formes de carte de la quantité d’accidents enregistrés par région puis par départements
+library(datasets)
 
+# idee de Elsa de recoder la fonction isin
 isin <- function(x, values) {
   return (x %in% values)
 }
-
 regions <- list(
     alsace = c("67", "68"),
     aquitaine = c("24", "33", "40", "47", "64"),
@@ -35,30 +35,30 @@ regions <- list(
     provence_alpes_cote_d_azur = c("04", "05", "06", "13", "83", "84"),
     rhone_alpes = c("01", "07", "26", "38", "42", "69", "73", "74")
 )
-# Clément (aide Marzhin)
-j <- 0
-acc_region <- function(donnee, nb_ligne){
-  # on fait la carte
-  donnee$region <- ""
-  for (i in 1:nb_ligne){
-    j <- j + 1
-    each_code <- donnee$id_code_insee[i]
-    dep <- substring(each_code, 1, 2) # on récupère les 2 premier caractère du code insee
-    for (reg_name in names(regions)){
-      each_region <- regions[[reg_name]]
-      if(isin(dep, each_region)){ # regarde si le departement(dep) est dans cette region(each_region)
-        #print("Met la regions")
-        #print(each_region)
-        donnee$region[i] <- reg_name
-      }
-    }
-    donnee$dep[i] <- dep
-  }
-  return (donnee)
-}
+# 2 liste contenant dans cette ordre les longitude ou latitude de ces régions :
+# "Alsace Champagne-Ardenne Lorraine", "Aquitaine Limousin Poitou-Charentes",  "Auvergne Rhône-Alpes", "Bourgogne Franche-Comté", "Bretagne",
+#             "Centre-Val de Loire", "Corse", "Île-de-France", "Languedoc-Roussillon Midi-Pyrénées", "Nord-Pas-de-Calais Picardie",
+#             "Normandie", "Pays de la Loire", "Provence-Alpes-Côte d'Azur")
+lon_reg <- c(5.619444, 0.197778, 4.538056, 4.809167, -2.838611,
+                         1.685278, 9.105278, 2.504722, 2.137222, 2.775278,
+                         0.106667, -0.823889, 6.053333)
+lat_reg <- c(48.68917, 45.19222, 45.51583, 47.23528, 48.17972,
+                        47.48056, 42.14972, 48.70917, 43.70222, 49.96611,
+                        49.12111, 47.47472, 43.95500)
+
+# Coordonnees_centre_departement
+# donnees trouvées par Paul-Adrien Source: https://www.data.gouv.fr/fr/datasets/coordonnees-geographiques-extremes-des-departements-metropolitains-de-france/
+data_gouv_dep_csv <- read.csv("points-extremes-des-departements-metropolitains-de-france.csv")
+middle_dep_lat <- NULL
+middle_dep_lon <- NULL
+middle_dep_lat[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Latitude.la.plus.au.nord + data_gouv_dep_csv$Latitude.la.plus.au.sud) / 2
+middle_dep_lon[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Longitude_est + data_gouv_dep_csv$Longitude_ouest) / 2
+dep_list <- data_gouv_dep_csv$Departement[order(data_gouv_dep_csv$Departement)]
+
+#importation des données préparés : fichier préparation.R
+#source("Préparation.R")
 
 # import de préparation
-library(datasets)
 stat_acc_V3 <- read.csv("stat_acc_V3.csv", sep=';')
 data <- stat_acc_V3
 # Clément 1.2
@@ -128,57 +128,84 @@ convert_tableau<- function(donnee){
 }
 data <- convert_tableau(data)
 
+# traitement pour la carte sur les données
+# Clément (aide Marzhin)
+acc_region <- function(donnee, nb_ligne){
+  # on fait la carte
+  donnee$region <- ""
+  for (i in 1:nb_ligne){
+    each_code <- donnee$id_code_insee[i]
+    dep <- substring(each_code, 1, 2) # on récupère les 2 premiers caractères du code insee
+    for (reg_name in names(regions)){
+      each_region <- regions[[reg_name]]
+      if(isin(dep, each_region)){ # regarde si le departement(dep) est dans cette region(each_region)
+        #print("Met la regions")
+        #print(each_region)
+        donnee$region[i] <- reg_name
+      }
+    }
+    donnee$dep[i] <- dep
+  }
+  return (donnee)
+}
+
 data <- acc_region(data,  nrow(data))
 
-# Pour chaque region on fait la somme des accidents
-acc_by_reg <- table(data$region)
+# construction des tableaux de données pour la carte qui contient lon | lat | nb d'accident
+datatableau_pour_nb_accident_region <- function (data, lon_reg, lat_reg, regions){
+  tableau_data_reg_stat <- NULL
+  i <- 0
+  tableau_data_reg_stat$lon <- NULL
+  tableau_data_reg_stat$lat <- NULL
+  tableau_data_reg_stat$nb <- NULL
+  for (reg_name in names(regions)){
+    i <- i + 1
+    #each_region <- regions[[reg_name]]
+    # region
+    tableau_data_reg_stat$lon <- append(tableau_data_reg_stat$lon, lon_reg[i])
+    tableau_data_reg_stat$lat <- append(tableau_data_reg_stat$lat, lat_reg[i])
+    tableau_data_reg_stat$nb <- append(tableau_data_reg_stat$nb, sum(data$region == reg_name))
+  }
+  return(tableau_data_reg_stat)
+}
 
-# Carte avec fleatlet
+datatableau_pour_nb_accident_departement <- function (data, middle_dep_lon, middle_dep_lat, dep_list){
+  tableau_data_dep_stat <- NULL
+  tableau_data_dep_stat$lon <- NULL
+  tableau_data_dep_stat$lat <- NULL
+  tableau_data_dep_stat$nb <- NULL
+  tableau_data_dep_stat$dep <- NULL
+
+  for (dep in dep_list){# on trie les département dans l'ordre alphabetique (c'est déjà le cas sauf pour la corse qui est à la fin (2A et 2B)) pour avoir le même ordre que le trie dans le geojson
+    # departement
+    tableau_data_dep_stat$lon <- append(tableau_data_dep_stat$lon, middle_dep_lon[dep])
+    tableau_data_dep_stat$lat <- append(tableau_data_dep_stat$lat, middle_dep_lat[dep])
+    tableau_data_dep_stat$nb <- append(tableau_data_dep_stat$nb, sum(data$dep == dep))
+    tableau_data_dep_stat$dep <- append(tableau_data_dep_stat$dep, dep)
+    #print(tableau_data_dep_stat$dep)
+  }
+  return (tableau_data_dep_stat)
+}
+
+
+# récupitulatif des données :
+# regions : dictionnaire des regions avec leurs départements
+# lon_reg et lat_reg :listes des longitudes et latitudes centrales des régions
+# middle_dep_lat et middle_dep_lon : listes des longitude et lattitude centrale des départements obtenu à partir d'un csv (data.gouv)
+# dep_list: liste des regions
+# data : dataframe contenant toutes les données + ajout de 2 colonnes: dep et régions qui contient respectivement le numero du departement et le nom de la region
+
+# Pour chaque region on fait la somme des accidents
+#print(table(data$region))
+
+# on récupère des données complete du nombre d'accidents par regions et par départements
+tableau_data_reg_stat <- datatableau_pour_nb_accident_region(data, lon_reg, lat_reg, regions)
+tableau_data_dep_stat <- datatableau_pour_nb_accident_departement(data, middle_dep_lon, middle_dep_lat, dep_list)
+
+# Cartes avec fleatlet
 # Documentation pour R: https://rstudio.github.io/leaflet/json.html
 geo_region_json <- geojson_read("regions.geojson")
 geo_dep_json <- geojson_read("departements.geojson")
-data_gouv_dep_csv <- read.csv("points-extremes-des-departements-metropolitains-de-france.csv")
-
-# histogramme accident par region
-
-
-middle_dep_lat <- NULL
-middle_dep_lon <- NULL
-middle_dep_lat[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Latitude.la.plus.au.nord + data_gouv_dep_csv$Latitude.la.plus.au.sud) / 2
-middle_dep_lon[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Longitude_est + data_gouv_dep_csv$Longitude_ouest) / 2
-
-dep_list <- data_gouv_dep_csv$Departement
-
-tableau_data_reg_stat <- NULL
-tableau_data_dep_stat <- NULL
-
-lon_reg <- c(5.619444, 0.197778, 4.538056, 4.809167, -2.838611,
-                         1.685278, 9.105278, 2.504722, 2.137222, 2.775278,
-                         0.106667, -0.823889, 6.053333)
-lat_reg <- c(48.68917, 45.19222, 45.51583, 47.23528, 48.17972,
-                        47.48056, 42.14972, 48.70917, 43.70222, 49.96611,
-                        49.12111, 47.47472, 43.95500)
-# construction des tableaux de données pour la carte qui contient lon | lat | nb d'accident
-i <- 0
-for (reg_name in names(regions)){
-  i <- i + 1
-  each_region <- regions[[reg_name]]
-  # region
-  tableau_data_reg_stat$lon <- append(tableau_data_reg_stat$lon, lon_reg[i])
-  tableau_data_reg_stat$lat <- append(tableau_data_reg_stat$lat, lat_reg[i])
-  tableau_data_reg_stat$nb <- append(tableau_data_reg_stat$nb, sum(data$region == reg_name))
-}
-for (dep in dep_list[order(dep_list)]){# on trie les département dans l'ordre alphabetique (c'est déjà le cas sauf pour la corse qui est à la fin (2A et 2B)) pour avoir le même ordre que le trie dans le geojson
-  # departement
-  tableau_data_dep_stat$lon <- append(tableau_data_dep_stat$lon, middle_dep_lon[dep])
-  tableau_data_dep_stat$lat <- append(tableau_data_dep_stat$lat, middle_dep_lat[dep])
-  tableau_data_dep_stat$nb <- append(tableau_data_dep_stat$nb, sum(data$dep == dep))
-  tableau_data_dep_stat$dep <- append(tableau_data_dep_stat$dep, dep)
-
-}
-
-#tableau_data_dep_stat <- tableau_data_dep_stat[order(tableau_data_dep_stat$dep)]
-print(tableau_data_dep_stat$dep)
 
 map_region <- function (geo_region_json, tableau_data_reg_stat){
   map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
@@ -188,7 +215,7 @@ map_region <- function (geo_region_json, tableau_data_reg_stat){
   map
 }
 
-map_departement <- function (geo_dep_json, tableau_dep_stat){
+map_departement <- function (geo_dep_json, tableau_data_dep_stat){
   # departement
   map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
     addTiles() %>%
@@ -197,11 +224,12 @@ map_departement <- function (geo_dep_json, tableau_dep_stat){
   map
 }
 
-# meilleurs map
+
+# Création d'un map avec layer coloré en fonction du nombre d'acccident
 #https://leafletjs.com/examples/choropleth/ https://rstudio.github.io/leaflet/choropleths.html
-map_depart_better <- function (tableau_data_dep_stat){
+map_depart_better <- function (tableau_data_dep_stat, title_legend){
   bins <- c(0, 1, 100, 200, 500, 1000, Inf)
-  #legend_label <- c("Donnée inconnu", "- de 100", "100 à 200", "200 à 500", "500 à 1000", "+ de 1000")
+  #legend_label <- c("Données inconnus", "- de 100", "100 à 200", "200 à 500", "500 à 1000", "+ de 1000")
   pal <- colorBin("YlOrRd", domain = tableau_data_dep_stat$nb, bins = bins)
 
   departements <- geojsonio::geojson_read("departements.geojson", what = "sp")
@@ -244,7 +272,7 @@ map_depart_better <- function (tableau_data_dep_stat){
     addControl(
       html = paste0(
         '<div id="legend" class="info legend">',
-        '   <h4>Nombre d\'accidents</h4>',
+        '   <h4>', title_legend, '</h4>',
         '   <ul style="list-style: none; color: black;  ">',
         '     <li style="background-color:', pal(bins[1]), ';">Données Inconnues</li>',
         '     <li style="background-color:', pal(bins[2]), ';">- de 100</li>',
@@ -259,6 +287,19 @@ map_depart_better <- function (tableau_data_dep_stat){
     )
   m
 }
-map_depart_better(tableau_data_dep_stat)
+
+# affichage des maps du nombre d'accidents par régions et département
+map_depart_better(tableau_data_dep_stat, 'Nombre d\'accidents')
 #map_region(geo_region_json, tableau_data_reg_stat)
 #map_departement(geo_dep_json, tableau_data_reg_stat)
+
+# Pour uniquement les accidents graves ( blessés, grave ou leger, ou tués,
+# filtrage des accidents indemnes (1)
+data_graves <- subset(data, descr_grav != 1)
+# récuperation des nouvelles données par région & departement
+tableau_data_reg_stat_graves <- datatableau_pour_nb_accident_region(data_graves, lon_reg, lat_reg, regions)
+tableau_data_dep_stat_graves <- datatableau_pour_nb_accident_departement(data_graves, middle_dep_lon, middle_dep_lat, dep_list)
+
+map_depart_better(tableau_data_dep_stat_graves, "Nombre d\'accidents graves")
+#map_region(geo_region_json, tableau_data_reg_stat_graves)
+#map_departement(geo_dep_json, tableau_data_reg_stat_graves)
