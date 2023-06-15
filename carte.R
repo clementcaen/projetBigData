@@ -174,17 +174,21 @@ for (dep in dep_list){
   tableau_data_dep_stat$nb <- append(tableau_data_dep_stat$nb, sum(data$dep == dep))
 }
 #print(tableau_data_reg_stat)
+map_region <- function (geo_region_json, tableau_data_reg_stat){
+  map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
+    addTiles() %>%
+    addGeoJSON(geo_region_json) %>%
+    addMarkers(data = tableau_data_reg_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
+  map
+}
 
-#map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
-#  addTiles() %>%
-#  addGeoJSON(geo_region_json) %>%
-#  addMarkers(data = tableau_data_reg_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
-#map
-
-
-# departement
-map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
-  addTiles() %>%
-  addGeoJSON(geo_dep_json) %>%
-  addMarkers(data = tableau_data_dep_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
-map
+map_departement <- function (geo_dep_json, tableau_dep_reg_stat){
+  # departement
+  map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
+    addTiles() %>%
+    addGeoJSON(geo_dep_json) %>%
+    addMarkers(data = tableau_data_dep_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
+  map
+}
+map_region(geo_region_json, tableau_data_reg_stat)
+#map_departement(geo_dep_json, tableau_data_reg_stat)
