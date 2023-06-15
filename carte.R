@@ -196,8 +196,6 @@ map_departement <- function (geo_dep_json, tableau_dep_stat){
     addMarkers(data = tableau_data_dep_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
   map
 }
-#map_region(geo_region_json, tableau_data_reg_stat)
-map_departement(geo_dep_json, tableau_data_reg_stat)
 
 # meilleurs map
 #https://leafletjs.com/examples/choropleth/ https://rstudio.github.io/leaflet/choropleths.html
@@ -262,3 +260,5 @@ map_depart_better <- function (tableau_data_dep_stat){
   m
 }
 map_depart_better(tableau_data_dep_stat)
+#map_region(geo_region_json, tableau_data_reg_stat)
+#map_departement(geo_dep_json, tableau_data_reg_stat)
