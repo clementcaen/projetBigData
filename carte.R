@@ -46,8 +46,8 @@ acc_region <- function(donnee){
     for (reg_name in names(regions)){
       each_region <- regions[[reg_name]]
       if(isin(dep, each_region)){ # regarde si le departement(dep) est dans cette region(each_region)
-        print("Met la regions")
-        print(each_region)
+        #print("Met la regions")
+        #print(each_region)
         donnee$region[i] <- reg_name
       }
     }
@@ -135,18 +135,33 @@ acc_by_reg <- table(data$region)
 # Documentation pour R: https://rstudio.github.io/leaflet/json.html
 geo_region_json <- geojson_read("regions.geojson")
 
-data_gouv_dep_csv <- read.csv("")
+data_gouv_dep_csv <- read.csv("points-extremes-des-departements-metropolitains-de-france.csv")
 
 # histogramme accident par region
 
 
-# moyenne des latitudes, longitudes pour toute les départements des regions
+# moyenne des latitudes, longitudes pour toute les départements
+middle_dep_lat <- data_gouv_dep_csv$LongitudeNord-data_gouv_dep_csv$LongitudeSud
+middle_dep_lon <- data_gouv_dep_csv$LatitudeNord-data_gouv_dep_csv$LatitudeSud
+#pour toutes les régions
+      #if(isin(dep, each_region)){ # regarde si le departement(dep) est dans cette region(each_region)
 
+tableau_data_reg_stat <- data.frame(lon, lat )
+# construction des tazbleaux de données pour la carte qui contient lon | lat | nb d'accident
+for (i in seq_along(regions)){
+  each_reg <- regions$reg[i]
+  # region
 
-map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
+  # departement
+  tableau_data_reg_stat$lon <- middle_dep_lon
+  tableau_data_reg_stat$lat <- middle_dep_lat
+
+}
+
+map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
   addTiles() %>%
   addGeoJSON(geo_region_json)
-  addMarkers(data = , lng = ~(), lat = ~(), label = ~Freq) # donne les points pour chaque region
+  addMarkers(data = , lng = ~(2), lat = ~(2), label = ~Freq) # donne les points pour chaque region
 map
 
 
@@ -154,5 +169,5 @@ map
 map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
   addTiles() %>%
   addGeoJSON(geo_dep_json)
-  addMarkers(data = , lng = ~(data_gouv_csv$LongitudeNord-data_gouv_csv$LongitudeSud), lat = ~(data_gouv_csv$LatitudeNord-data_gouv_csv$LatitudeSud), label = ~Freq) # donne les points pour chaque region
+  addMarkers(data = , lng = ~(2), lat = ~(23), label = ~Freq) # donne les points pour chaque region
 map
