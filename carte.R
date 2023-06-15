@@ -140,9 +140,10 @@ geo_dep_json <- geojson_read("departements.geojson")
 data_gouv_dep_csv <- read.csv("points-extremes-des-departements-metropolitains-de-france.csv")
 
 # histogramme accident par region
+
+
 middle_dep_lat <- NULL
 middle_dep_lon <- NULL
-#pour toutes les régions
 middle_dep_lat[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Latitude.la.plus.au.nord + data_gouv_dep_csv$Latitude.la.plus.au.sud) / 2
 middle_dep_lon[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Longitude_est + data_gouv_dep_csv$Longitude_ouest) / 2
 
@@ -167,13 +168,18 @@ for (reg_name in names(regions)){
   tableau_data_reg_stat$lat <- append(tableau_data_reg_stat$lat, lat_reg[i])
   tableau_data_reg_stat$nb <- append(tableau_data_reg_stat$nb, sum(data$region == reg_name))
 }
-for (dep in dep_list){
+for (dep in dep_list[order(dep_list)]){# on trie les département dans l'ordre alphabetique (c'est déjà le cas sauf pour la corse qui est à la fin (2A et 2B)) pour avoir le même ordre que le trie dans le geojson
   # departement
   tableau_data_dep_stat$lon <- append(tableau_data_dep_stat$lon, middle_dep_lon[dep])
   tableau_data_dep_stat$lat <- append(tableau_data_dep_stat$lat, middle_dep_lat[dep])
   tableau_data_dep_stat$nb <- append(tableau_data_dep_stat$nb, sum(data$dep == dep))
+  tableau_data_dep_stat$dep <- append(tableau_data_dep_stat$dep, dep)
+
 }
-#print(tableau_data_reg_stat)
+
+#tableau_data_dep_stat <- tableau_data_dep_stat[order(tableau_data_dep_stat$dep)]
+print(tableau_data_dep_stat$dep)
+
 map_region <- function (geo_region_json, tableau_data_reg_stat){
   map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>% # se place sur le point de view de la France
     addTiles() %>%
@@ -182,7 +188,7 @@ map_region <- function (geo_region_json, tableau_data_reg_stat){
   map
 }
 
-map_departement <- function (geo_dep_json, tableau_dep_reg_stat){
+map_departement <- function (geo_dep_json, tableau_dep_stat){
   # departement
   map <- leaflet() %>% setView(lng = 2, lat = 48, zoom = 5) %>%
     addTiles() %>%
@@ -190,5 +196,69 @@ map_departement <- function (geo_dep_json, tableau_dep_reg_stat){
     addMarkers(data = tableau_data_dep_stat, lng = ~lon, lat = ~lat, label = ~nb) # donne les points pour chaque region
   map
 }
-map_region(geo_region_json, tableau_data_reg_stat)
-#map_departement(geo_dep_json, tableau_data_reg_stat)
+#map_region(geo_region_json, tableau_data_reg_stat)
+map_departement(geo_dep_json, tableau_data_reg_stat)
+
+# meilleurs map
+#https://leafletjs.com/examples/choropleth/ https://rstudio.github.io/leaflet/choropleths.html
+map_depart_better <- function (tableau_data_dep_stat){
+  bins <- c(0, 1, 100, 200, 500, 1000, Inf)
+  #legend_label <- c("Donnée inconnu", "- de 100", "100 à 200", "200 à 500", "500 à 1000", "+ de 1000")
+  pal <- colorBin("YlOrRd", domain = tableau_data_dep_stat$nb, bins = bins)
+
+  departements <- geojsonio::geojson_read("departements.geojson", what = "sp")
+
+  # Chaque departement possède : { code, name }
+  departements <- departements[order(departements$code), ] # on trie les donnée geojson pour les avoir dans le même ordre que le tableau des accidents ( la virgule déclare que l'on souhaite garder les colonnes)
+
+  #print(departements$code)
+  departements$density_acc <- tableau_data_dep_stat$nb
+  departements$dep <- names(tableau_data_dep_stat$lon)
+  labels <- sprintf(
+    "<strong>N° du département: %s</strong><br/>%g Accidents en 2009",
+    departements$dep, departements$density_acc
+  ) %>% lapply(htmltools::HTML)
+
+  m <- leaflet(departements) %>%
+    setView(lng = 2, lat = 48, zoom = 5) %>%
+    addProviderTiles("MapBox", options = providerTileOptions(
+      id = "mapbox.light",
+      accessToken = Sys.getenv('pk.eyJ1IjoiY2xlbWVudGoiLCJhIjoiY2xoYWh4NTYwMDc3azNjbnM2em9veHdxbCJ9.xyrycPiUE7fNHDMvZN3zDw'))) %>%
+    addPolygons(
+      fillColor = ~pal(density_acc),
+      weight = 2,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.7,
+      highlightOptions = highlightOptions(
+        weight = 5,
+        color = "#666",
+        dashArray = "",
+        fillOpacity = 0.7,
+        bringToFront = TRUE),
+      label = labels,
+      labelOptions = labelOptions(
+        style = list("font-weight" = "normal", padding = "3px 8px"),
+        textsize = "15px",
+        direction = "auto")
+      ) %>%
+    addControl(
+      html = paste0(
+        '<div id="legend" class="info legend">',
+        '   <h4>Nombre d\'accidents</h4>',
+        '   <ul style="list-style: none; color: black;  ">',
+        '     <li style="background-color:', pal(bins[1]), ';">Données Inconnues</li>',
+        '     <li style="background-color:', pal(bins[2]), ';">- de 100</li>',
+        '     <li style="background-color:', pal(bins[3]), ';">100 à 200</li>',
+        '     <li style="background-color:', pal(bins[4]), ';">200 à 500</li>',
+        '     <li style="background-color:', pal(bins[5]), ';">500 à 1000</li>',
+        '     <li style="background-color:', pal(bins[6]), ';">+ de 1000</li>',
+        '   </ul>',
+        '</div>'
+      ),
+      position = "topright"
+    )
+  m
+}
+map_depart_better(tableau_data_dep_stat)
