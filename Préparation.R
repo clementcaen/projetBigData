@@ -114,7 +114,7 @@ monthly_aggregated <- aggregate(nombre_accidents ~ format(date, "%Y-%m"), data =
 print(monthly_aggregated)
 
 # Agréger les données par semaine
-weekly_aggregated <- aggregate(nombre_accidents ~ format(date, "%Y-%U"), data = data, FUN = sum)
+weekly_aggregated <- aggregate(total_accidents ~ format(date, "%Y-%U"), data = data, FUN = sum)
 print(weekly_aggregated)
 
 
