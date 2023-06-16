@@ -1,11 +1,12 @@
+stat_acc_V3 <- read.csv("stat_acc_V3.csv", sep=';')
 data = stat_acc_V3
 
 vehicule=unique(data["num_veh"])
 print(vehicule)
-print(n=58, vehicule)
+print(vehicule)
 
 categorie_vehicule=unique(data["descr_cat_veh"])
-print(n=24, categorie_vehicule)
+print(categorie_vehicule)
 
 agglo=unique(data["descr_agglo"])
 print(agglo)

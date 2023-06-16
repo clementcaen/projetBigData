@@ -1,42 +1,59 @@
+library(geojsonR)
+library(dplyr)
+library(ggplot2)
 
+# récupération de préparation
+source("Préparation.R")
 
 # 1.Créer des représentations graphiques pour:
-
- 
   #Nombre d’accidents en fonction des conditions atmosphériques
     #Marzhin
- 
-
+acc_atmo <- function(donnee){
+  hist(donnee$descr_athmo,
+          xlab = "Conditions Atmosphériques", ylab = "Nombre d'Accidents",
+          main = "Nombre d'Accidents en fonction des Conditions Atmosphériques",
+          col = "skyblue", las = 2)
+}
+acc_atmo(donnee = data)
 
   # Nombre d’accidents en fonction de la description de la surface
     #Marzhin
-
-
+acc_surf <- function(donnee){
+  hist(donnee$descr_etat_surf,
+       xlab = "Conditions de surface", ylab = "Nombre d'Accidents",
+       main = "Nombre d'Accidents en fonction des conditions de surface",
+       col = "skyblue", las = 2)
+}
+acc_surf(data)
 
   # Nombre d’accidents selon la gravité
     #Marzhin
-
-
+acc_grav <- function(donnee){
+  hist(donnee$descr_grav,
+       xlab = "Gravité", ylab = "Nombre d'Accidents",
+       main = "Nombre d'Accidents en fonction de la gravité",
+       col = "skyblue", las = 2)
+}
+acc_surf(donnee = data)
 
   # Nombre d’accidents par tranches d’heure
     #Clément
-
-
+# histogramme par heure
+hist(as.numeric(strftime(data$date, format = "%H")), main = "Histogramme d'accident par heure")
 
   # Nombre d’accidents par ville
     #Clément
+#hist(data$id_code_insee, labels = TRUE, xlab = data$ville)
+ville_plus_touche <- head(sort(table(data$ville), decreasing = TRUE), 12)
+barplot(ville_plus_touche, las=2) # las met les nom des villes à la verticale
 
 
-
-#2.Créer des histogrammes 
-
-
+#2.Créer des histogrammes
 # Quantité d’accidents en fonction des tranches d’âges
   #Chloé
 
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-library(dplyr)
-library(ggplot2)
+data <- read.csv("stat_acc_V3.csv", sep=";")
+
 # Convertir la colonne "age" en type numérique
 data$age <- as.numeric(data$age)
 # Créer des tranches d'âge
@@ -54,10 +71,7 @@ ggplot(age_summary, aes(x = age_group, y = total_accidents)) +
 
 # Moyenne mensuelle des accidents
   #Chloé
-
-library(dplyr)
-library(ggplot2)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+data <- read.csv("stat_acc_V3.csv", sep=";")
 data$date <- as.Date(data$date)
 # Créer la série chronologique par mois
 monthly_data <- data %>%
@@ -76,22 +90,4 @@ ggplot(monthly_mean, aes(x = month, y = mean_accidents)) +
 
 # Proposer une représentation sous formes de carte de la quantité d’accidents enregistrés par
   #Clément
-
-  #région 
-
-
-
-  #départements
-
-
-
-# Même chose avec les taux d’accidents graves
-  #Clément
-
-  #région
-
-
-  #départements
-
-
-
+  # voir carte.R

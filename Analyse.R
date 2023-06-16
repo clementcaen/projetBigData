@@ -1,210 +1,203 @@
-# Etude des relations entre variables qualitatives
+source("Préparation.R")
+
+library(forecast)
+library(dplyr)
+library(ggplot2)
+library(caTools)
+library(Metrics)
+
+#Etude des relations entre variables qualitatives
   # Faire des tableaux croisées et des tests d’indépendance du chi2 sur les tableaux entre les différentes variables
    #Marzhin
-
-
-  # Représenter graphiquement ces tableaux (mosaicplot) et les analyser
+# Et Représenter graphiquement ces tableaux (mosaicplot) et les analyser
     #Marzhin
+athmo_grav <- function(donnee){
+  tableau_croise <- table(donnee$descr_athmo, donnee$descr_grav)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé de l'athmosphère et de la gravité", xlab = "atmosphère", ylab = "gravité", color=couleurs)
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+
+surf_grav <- function(donnee){
+  tableau_croise <- table(donnee$descr_etat_surf, donnee$descr_grav)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé de la surface et de la gravité", xlab = "surface", ylab = "gravité", color=couleurs)
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+
+lum_grav<- function(donnee){
+  tableau_croise <- table(donnee$descr_lum, donnee$descr_grav)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé de la lûmière et de la gravité", xlab = "athmosphère", ylab = "gravité", color=couleurs)
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+
+secu_grav<- function(donnee){
+  tableau_croise <- table(donnee$descr_dispo_secu, donnee$descr_grav)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé des éléments de sécurité et de la gravité", xlab = "éléments de sécurité", ylab = "gravité", color=couleurs)
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+vehicule_agglo<- function(donnee){
+  tableau_croise <- table(donnee$descr_cat_veh, donnee$descr_agglo)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé des véhicules et de l'agglo", xlab = "véhicule", ylab = "agglo", color=couleurs)
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+col_grav<- function(donnee){
+  tableau_croise <- table(donnee$descr_type_col, donnee$descr_grav)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé du type de collision et de la gravité", xlab = "type de collision", ylab = "gravité", color=couleurs)
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+
+#athmo_grav(donnee = data)
+#surf_grav(donnee = data)
+#lum_grav(donnee = data)
+#secu_grav(donnee = data)
+#vehicule_agglo(donnee = data)
+#col_grav(donnee = data)
 
 
 # Calculer les régressions linéaires de l’évolution du nombre d’accidents par mois, puis par semaine.
  # Comparer les résultats obtenus par les deux régressions mentionnées ci-dessus
-
   # Analyser les performances de la régression (proportion de la variabilité due aux résidus et aux variables ex.)
-   #Chloé    
+   #Chloé
+performance_regression <- function(){
+  # Division de la base de données en ensembles d'entraînement et de test pour l'agrégation mensuelle
+  train_monthly <- monthly_data[1:round(0.7 * nrow(monthly_data)), ]
+  test_monthly <- monthly_data[(round(0.7 * nrow(monthly_data)) + 1):nrow(monthly_data), ]
 
-library(caTools)
-library(Metrics)
+  # Division de la base de données en ensembles d'entraînement et de test pour l'agrégation hebdomadaire
+  train_weekly <- weekly_data[1:round(0.7 * nrow(weekly_data)), ]
+  test_weekly <- weekly_data[(round(0.7 * nrow(weekly_data)) + 1):nrow(weekly_data), ]
 
-# Division de la base de données en ensembles d'entraînement et de test pour l'agrégation mensuelle
-train_monthly <- monthly_data[1:round(0.7 * nrow(monthly_data)), ]
-test_monthly <- monthly_data[(round(0.7 * nrow(monthly_data)) + 1):nrow(monthly_data), ]
+  # Régression linéaire pour l'agrégation mensuelle
+  lm_monthly <- lm(total_accidents ~ as.Date(paste0(month, "-01")), data = train_monthly)
+  predicted_monthly <- predict(lm_monthly, newdata = test_monthly) # Prédictions mensuelles
 
-# Division de la base de données en ensembles d'entraînement et de test pour l'agrégation hebdomadaire
-train_weekly <- weekly_data[1:round(0.7 * nrow(weekly_data)), ]
-test_weekly <- weekly_data[(round(0.7 * nrow(weekly_data)) + 1):nrow(weekly_data), ]
+  # Régression linéaire pour l'agrégation hebdomadaire
+  lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
+  predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
 
-# Régression linéaire pour l'agrégation mensuelle
-lm_monthly <- lm(total_accidents ~ as.Date(paste0(month, "-01")), data = train_monthly)
-predicted_monthly <- predict(lm_monthly, newdata = test_monthly) # Prédictions mensuelles
+  # Calcul de la racine carrée de l'erreur quadratique moyenne (RMSE)
+  rmse_monthly <- rmse(test_monthly$total_accidents, predicted_monthly)
+  rmse_weekly <- rmse(test_weekly$total_accidents, predicted_weekly)
 
-# Régression linéaire pour l'agrégation hebdomadaire
-lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
-predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
+  # Affichage des résultats
+  print("Résultats pour l'agrégation mensuelle:")
+  print(rmse_monthly)
+  print("Résultats pour l'agrégation hebdomadaire:")
+  print(rmse_weekly)
+}
+#performance_regression()
 
-# Calcul de la racine carrée de l'erreur quadratique moyenne (RMSE)
-rmse_monthly <- rmse(test_monthly$total_accidents, predicted_monthly)
-rmse_weekly <- rmse(test_weekly$total_accidents, predicted_weekly)
-
-# Affichage des résultats
-print("Résultats pour l'agrégation mensuelle:")
-print(rmse_monthly)
-print("Résultats pour l'agrégation hebdomadaire:")
-print(rmse_weekly)
 
   # Analyser des erreurs types associés aux estimateurs
    #Chloé
-
-#erreur absolue moyenne mensuelle 
-
-# Charger les bibliothèques nécessaires
-library(dplyr)
-library(ggplot2)
-library(forecast)
-
-# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-
-# Convertir la colonne "date" en type "Date"
-data$date <- as.Date(data$date)
-
 # Créer la série chronologique par mois
-monthly_data <- data %>%
+mensuel <- function (){
+  monthly_data <- data %>%
   mutate(month = format(date, "%Y-%m")) %>%
   group_by(month) %>%
   summarise(total_accidents = n())
 
-# Ajuster un modèle de régression linéaire pour les données mensuelles
-lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
+  # Ajuster un modèle de régression linéaire pour les données mensuelles
+  lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
 
-# Prédictions du modèle pour les données mensuelles
-predictions_monthly <- predict(lm_monthly)
+  # Prédictions du modèle pour les données mensuelles
+  predictions_monthly <- predict(lm_monthly)
 
-# Calcul de l'erreur absolue moyenne (MAE) pour les données mensuelles
-mae_monthly <- mean(abs(monthly_data$total_accidents - predictions_monthly))
+  # Calcul de l'erreur absolue moyenne (MAE) pour les données mensuelles
+  mae_monthly <- mean(abs(monthly_data$total_accidents - predictions_monthly))
 
-# Afficher l'erreur absolue moyenne pour les données mensuelles
-cat("Erreur absolue moyenne (MAE) pour les données mensuelles :", mae_monthly)
+  # Afficher l'erreur absolue moyenne pour les données mensuelles
+  cat("Erreur absolue moyenne (MAE) pour les données mensuelles :", mae_monthly)
 
+  # Créer la série chronologique par mois
+  monthly_data <- data %>%
+    mutate(month = format(date, "%Y-%m")) %>%
+    group_by(month) %>%
+    summarise(total_accidents = n())
 
-# erreur absolue moyenne hebdomadaire
+  # Fractionner les données en ensembles d'entraînement et de test
+  train_monthly <- monthly_data[1:6, ]
+  test_monthly <- monthly_data[7:12, ]
 
+  # Régression linéaire pour l'agrégation mensuelle
+  lm_monthly <- lm(total_accidents ~ as.Date(paste0(month, "-01"), format = "%Y-%m-%d"), data = train_monthly)
+  predicted_monthly <- predict(lm_monthly, newdata = test_monthly) # Prédictions mensuelles
+  # Calcul de l'erreur relative pour les données mensuelles
+  relative_error_monthly <- abs((monthly_data$total_accidents - predicted_monthly) / monthly_data$total_accidents)
+  # Afficher l'erreur relative pour les données mensuelles
+  cat("Erreur relative mensuelle :", mean(relative_error_monthly))
 
-# Charger les bibliothèques nécessaires
-library(dplyr)
-library(ggplot2)
-library(forecast)
+  # Calculer les intervalles de confiance à 95% pour les données mensuelles
+  monthly_ci <- predict(lm_monthly, interval = "confidence", level = 0.95)
+  # Imprimer les intervalles de confiance à 95% pour les données mensuelles
+  cat("Intervalles de confiance à 95% pour les données mensuelles:\n")
+  print(monthly_ci)
 
-# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
+}
+mensuel()
 
-# Convertir la colonne "date" en type "Date"
-data$date <- as.Date(data$date)
+hebdomadaire <- function (){
+  # Créer la série chronologique par semaine
+  weekly_data <- data %>%
+    mutate(week = format(date, "%Y-%W")) %>%
+    group_by(week) %>%
+    summarise(total_accidents = n())
 
-weekly_data <- data %>%
-  mutate(week = format(date, "%Y-%W")) %>%
-  group_by(week) %>%
-  summarise(total_accidents = n())
+  # Régression linéaire pour l'agrégation hebdomadaire
+  lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
+  predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
 
+  # Calcul de l'erreur absolue moyenne (MAE) pour les données mensuelles
+  mae_weekly <- mean(abs(weekly_data$total_accidents - predicted_weekly))
 
-# Régression linéaire pour l'agrégation hebdomadaire
-lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
-predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
+  # Afficher l'erreur absolue moyenne pour les données mensuelles
+  cat("Erreur absolue moyenne (MAE) pour les données hebdomadaires :", mae_weekly)
 
+  # Pour l'erreur relative
+  weekly_data <- data %>%
+    mutate(week = format(date, "%Y-%W")) %>%
+    group_by(week) %>%
+    summarise(total_accidents = n())
 
-# Calcul de l'erreur absolue moyenne (MAE) pour les données mensuelles
-mae_weekly <- mean(abs(weekly_data$total_accidents - predicted_weekly))
+  # Fractionner les données en ensembles d'entraînement et de test
+  train_weekly <- weekly_data[1:40, ]
+  test_weekly <- weekly_data[41:52, ]
 
-# Afficher l'erreur absolue moyenne pour les données mensuelles
-cat("Erreur absolue moyenne (MAE) pour les données hebdomadaires :", mae_weekly)
+  # Régression linéaire pour l'agrégation hebdomadaire
+  lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
+  predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
 
-# erreur relative hebdomadaire 
+  # Calcul de l'erreur relative pour les données hebdomadaires
+  relative_error_weekly <- abs((weekly_data$total_accidents - predicted_weekly) / weekly_data$total_accidents)
 
-# Charger les bibliothèques nécessaires
-library(dplyr)
-library(ggplot2)
-library(forecast)
+  # Afficher l'erreur relative pour les données hebdomadaires
+  cat("Erreur relative pour les données hebdomadaires :", mean(relative_error_weekly))
 
-# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-
-# Convertir la colonne "date" en type "Date"
-data$date <- as.Date(data$date)
-
-# Créer la série chronologique par semaine
-weekly_data <- data %>%
-  mutate(week = format(date, "%Y-%W")) %>%
-  group_by(week) %>%
-  summarise(total_accidents = n())
-
-# Fractionner les données en ensembles d'entraînement et de test
-train_weekly <- weekly_data[1:40, ]  # Remplacez les indices appropriés selon votre configuration de données
-test_weekly <- weekly_data[41:52, ]  # Remplacez les indices appropriés selon votre configuration de données
-
-# Régression linéaire pour l'agrégation hebdomadaire
-lm_weekly <- lm(total_accidents ~ as.Date(paste0(week, "-1"), format = "%Y-%U-%u"), data = train_weekly)
-predicted_weekly <- predict(lm_weekly, newdata = test_weekly) # Prédictions hebdomadaires
-
-# Calcul de l'erreur relative pour les données hebdomadaires
-relative_error_weekly <- abs((weekly_data$total_accidents - predicted_weekly) / weekly_data$total_accidents)
-
-# Afficher l'erreur relative pour les données hebdomadaires
-cat("Erreur relative pour les données hebdomadaires :", mean(relative_error_weekly))
-
-# erreur relative mensuelle
-
-# Charger les bibliothèques nécessaires
-library(dplyr)
-library(ggplot2)
-library(forecast)
-
-# Charger les données mensuelles (remplacez "votre_fichier.csv" par le nom de votre fichier de données)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-
-# Convertir la colonne "date" en type "Date"
-data$date <- as.Date(data$date)
-
-# Créer la série chronologique par mois
-monthly_data <- data %>%
-  mutate(month = format(date, "%Y-%m")) %>%
-  group_by(month) %>%
-  summarise(total_accidents = n())
-
-# Fractionner les données en ensembles d'entraînement et de test
-train_monthly <- monthly_data[1:6, ]  # Remplacez les indices appropriés selon votre configuration de données
-test_monthly <- monthly_data[7:12, ]  # Remplacez les indices appropriés selon votre configuration de données
-
-# Régression linéaire pour l'agrégation mensuelle
-lm_monthly <- lm(total_accidents ~ as.Date(paste0(month, "-01"), format = "%Y-%m-%d"), data = train_monthly)
-predicted_monthly <- predict(lm_monthly, newdata = test_monthly) # Prédictions mensuelles
-# Calcul de l'erreur relative pour les données mensuelles
-relative_error_monthly <- abs((monthly_data$total_accidents - predicted_monthly) / monthly_data$total_accidents)
-# Afficher l'erreur relative pour les données mensuelles
-cat("Erreur relative mensuelle :", mean(relative_error_monthly))
-
-
-   # Calculer les intervalles de confiance à 95% pour ces estimateurs
-   #Chloé
-
-
-library(dplyr)
-library(ggplot2)
-library(forecast)
-# Calculer les intervalles de confiance à 95% pour les données mensuelles
-monthly_ci <- predict(lm_monthly, interval = "confidence", level = 0.95)
-# Imprimer les intervalles de confiance à 95% pour les données mensuelles
-cat("Intervalles de confiance à 95% pour les données mensuelles:\n")
-print(monthly_ci)
 
 # Calculer les intervalles de confiance à 95% pour les données hebdomadaires
-library(dplyr)
-library(ggplot2)
-library(forecast)
 weekly_ci <- predict(lm_weekly, interval = "confidence", level = 0.95)
 # Imprimer les intervalles de confiance à 95% pour les données hebdomadaires
 cat("Intervalles de confiance à 95% pour les données hebdomadaires:\n")
 print(weekly_ci)
 
+}
+hebdomadaire()
 
    # Calculer les R2 et R2 ajusté pour les deux modèles. 
    #Chloé
 
-
-# Mensuel 
-library(dplyr)
-library(ggplot2)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-data$date <- as.Date(data$date)
+# Mensuel
 monthly_data <- data %>%
   mutate(month = format(date, "%Y-%m")) %>%
   group_by(month) %>%
@@ -222,10 +215,6 @@ ggplot(monthly_data, aes(x = as.numeric(as.Date(paste0(month, "-01"))), y = tota
   labs(x = "Mois", y = "Nombre d'accidents", title = "Régression linéaire - Données mensuelles")
 
 #semaine
-library(dplyr)
-library(ggplot2)
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-data$date <- as.Date(data$date) 
 weekly_data <- data %>%
   mutate(week = format(date, "%Y-%W")) %>%
   group_by(week) %>%
@@ -244,14 +233,6 @@ ggplot(weekly_data, aes(x = as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")),
   labs(x = "Semaine", y = "Nombre d'accidents", title = "Régression linéaire - Données hebdomadaires")
 
 # Mensuel sur intervalle de confiance
-
-library(dplyr)
-library(ggplot2)
-library(forecast)
-
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-data$date <- as.Date(data$date)
-
 # Créer la série chronologique par mois
 monthly_data <- data %>%
   mutate(month = format(date, "%Y-%m")) %>%
@@ -279,14 +260,6 @@ ggplot(monthly_plot_data, aes(x = x, y = y)) +
   labs(x = "Mois", y = "Nombre d'accidents", title = "Régression linéaire - Données mensuelles")
 
 # Hebdomadaire sur intervalle de confiance
-
-library(dplyr)
-library(ggplot2)
-library(forecast)
-
-data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
-data$date <- as.Date(data$date)
-
 # Créer la série chronologique par semaine
 weekly_data <- data %>%
   mutate(week = format(date, "%Y-%W")) %>%
@@ -304,13 +277,10 @@ weekly_plot_data <- data.frame(x = as.numeric(as.Date(paste0(weekly_data$week, "
                                lower_bound = weekly_ci[, "lwr"],
                                upper_bound = weekly_ci[, "upr"])
 
-# Tracer le graphique avec les intervalles de confiance pour les données hebdomadaires
+# Graphique avec les intervalles de confiance pour les données hebdomadaires
 ggplot(weekly_plot_data, aes(x = x, y = y)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE, color = "blue") +
   geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), alpha = 0.3, fill = "blue") +
   labs(x = "Semaine", y = "Nombre d'accidents", title = "Régression linéaire - Données hebdomadaires")
-
-
-
 

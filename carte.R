@@ -11,6 +11,7 @@ library(datasets)
 isin <- function(x, values) {
   return (x %in% values)
 }
+
 regions <- list(
     alsace = c("67", "68"),
     aquitaine = c("24", "33", "40", "47", "64"),
@@ -57,76 +58,7 @@ dep_list <- data_gouv_dep_csv$Departement[order(data_gouv_dep_csv$Departement)]
 
 #importation des données préparés : fichier préparation.R
 #source("Préparation.R")
-
-# import de préparation
-stat_acc_V3 <- read.csv("stat_acc_V3.csv", sep=';')
-data <- stat_acc_V3
-# Clément 1.2
-# Mettre les variables numériques sous format numériques, date sous format date
-convertDate <- function (colonneCsv){
-  new_date <- NULL
-  for (each_date in colonneCsv){
-    new_date <- append(new_date, as.POSIXct(each_date, format = "%Y-%m-%d %H:%M:%S")) # format represente les dates venant du csv ex:2009-10-04 20:50:00
-  }
-  return(new_date)
-}
-convertNumeric <- function (colonneCsv){
-  new_num <- NULL
-  for (each_number in colonneCsv){
-    new_num <- append(new_num, as.double(each_number))
-  }
-  return(new_num)
-}
-# conversion colonnes non multi-modales
-data["Num_Acc"] <- convertNumeric(data["Num_Acc"])
-data["id_usa"] <- convertNumeric(data["id_usa"])
-data["date"] <- convertDate(data["date"])
-#data["id_code_insee"] <- convertNumeric(data["id_code_insee"]) # on ne les convertis pas à cause de la Corse (2A)
-data["latitude"] <- convertNumeric(data["latitude"])
-data["longitude"] <- convertNumeric(data["longitude"])
-data["an_nais"] <- convertNumeric(data["an_nais"])
-data["age"] <- convertNumeric(data["age"])
-data["place"] <- convertNumeric(data["place"])
-# Marzhin
-convert_tableau<- function(donnee){
-  # conversion colonnes multimodales
-  donnee$num_veh <- factor(donnee$num_veh)
-  donnee$num_veh <- as.numeric(donnee$num_veh)
-
-  donnee$descr_cat_veh <- factor(donnee$descr_cat_veh)
-  donnee$descr_cat_veh <- as.numeric(donnee$descr_cat_veh)
-
-  donnee$descr_agglo <- factor(donnee$descr_agglo)
-  donnee$descr_agglo <- as.numeric(donnee$descr_agglo)
-
-  donnee$descr_athmo <- factor(donnee$descr_athmo)
-  donnee$descr_athmo <- as.numeric(donnee$descr_athmo)
-
-  donnee$descr_lum <- factor(donnee$descr_lum)
-  donnee$descr_lum <- as.numeric(donnee$descr_lum)
-
-  donnee$descr_etat_surf <- factor(donnee$descr_etat_surf)
-  donnee$descr_etat_surf <- as.numeric(donnee$descr_etat_surf)
-
-  donnee$description_intersection <- factor(donnee$description_intersection)
-  donnee$description_intersection <- as.numeric(donnee$description_intersection)
-
-  donnee$descr_dispo_secu <- factor(donnee$descr_dispo_secu)
-  donnee$descr_dispo_secu <- as.numeric(donnee$descr_dispo_secu)
-
-  donnee$descr_grav <- factor(donnee$descr_grav, levels = c("Indemne", "Blessé léger", "Blessé hospitalisé", "Tué"))
-  donnee$descr_grav <- as.numeric(donnee$descr_grav)
-
-  donnee$descr_motif_traj <- factor(donnee$descr_motif_traj)
-  donnee$descr_motif_traj <- as.numeric(donnee$descr_motif_traj)
-
-  donnee$descr_type_col <- factor(donnee$descr_type_col)
-  donnee$descr_type_col <- as.numeric(donnee$descr_type_col)
-
-  #write.xlsx(donnee, file="dataV2.xlsx")
-  return (donnee)
-}
-data <- convert_tableau(data)
+# utilisation de data uniquement
 
 # traitement pour la carte sur les données
 # Clément (aide Marzhin)
@@ -148,7 +80,6 @@ acc_region <- function(donnee, nb_ligne){
   }
   return (donnee)
 }
-
 data <- acc_region(data,  nrow(data))
 
 # construction des tableaux de données pour la carte qui contient lon | lat | nb d'accident
@@ -300,6 +231,6 @@ data_graves <- subset(data, descr_grav != 1)
 tableau_data_reg_stat_graves <- datatableau_pour_nb_accident_region(data_graves, lon_reg, lat_reg, regions)
 tableau_data_dep_stat_graves <- datatableau_pour_nb_accident_departement(data_graves, middle_dep_lon, middle_dep_lat, dep_list)
 
-map_depart_better(tableau_data_dep_stat_graves, "Nombre d\'accidents graves")
+#map_depart_better(tableau_data_dep_stat_graves, "Nombre d\'accidents graves")
 #map_region(geo_region_json, tableau_data_reg_stat_graves)
 #map_departement(geo_dep_json, tableau_data_reg_stat_graves)
