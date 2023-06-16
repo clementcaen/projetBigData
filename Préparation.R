@@ -110,7 +110,7 @@ ggplot(weekly_data, aes(x = as.Date(paste0(week, "-1"), "%Y-%U-%u"), y = total_a
   labs(x = "Semaine", y = "Nombre d'accidents", title = "Évolution hebdomadaire du nombre d'accidents")
 
 # Agréger les données par mois
-monthly_aggregated <- aggregate(nombre_accidents ~ format(date, "%Y-%m"), data = data, FUN = sum)
+monthly_aggregated <- aggregate(total_accidents ~ format(date, "%Y-%m"), data = data, FUN = sum)
 print(monthly_aggregated)
 
 # Agréger les données par semaine
