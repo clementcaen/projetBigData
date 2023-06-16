@@ -57,7 +57,7 @@ middle_dep_lon[data_gouv_dep_csv$Departement] <- (data_gouv_dep_csv$Longitude_es
 dep_list <- data_gouv_dep_csv$Departement[order(data_gouv_dep_csv$Departement)]
 
 #importation des données préparés : fichier préparation.R
-#source("Préparation.R")
+source("Préparation.R")
 # utilisation de data uniquement
 
 # traitement pour la carte sur les données
