@@ -31,7 +31,7 @@ data["an_nais"] <- convertNumeric(data["an_nais"])
 data["age"] <- convertNumeric(data["age"])
 data["place"] <- convertNumeric(data["place"])
 
-# Marzhin
+# Marzhin 1.3
 convert_tableau<- function(donnee){
   # conversion colonnes multimodales
   donnee$num_veh <- factor(donnee$num_veh)
@@ -74,16 +74,16 @@ convert_tableau<- function(donnee){
 
 data <- convert_tableau(data)
 
-#Chloé préparation.4
-library(dplyr) # manipulation de donnée
-library(ggplot2) # réalisation de graphique
-# Charger les données depuis le fichier CSV
-data <- read.csv("stat_acc_V3.csv", sep=";")
-# Convertir la colonne "date" en type "Date"
-data$date <- as.Date(data$date)
+#Chloé 1.4
 
 #Evolution par mois du nombre d’accident
 
+library(dplyr) # manipulation de donnée
+library(ggplot2) # réalisation de graphique
+
+data <- read.csv("stat_acc_V3.csv", sep=";")
+# Convertir la colonne "date" en type "Date"
+data$date <- as.Date(data$date)
 # Créer la série chronologique par mois
 monthly_data <- data %>%
   mutate(month = format(date, "%Y-%m")) %>%
@@ -98,6 +98,7 @@ ggplot(monthly_data, aes(x = as.Date(paste0(month, "-01")), y = total_accidents)
 
 library(dplyr)
 library(ggplot2)
+
 # Créer la série chronologique par semaine
 weekly_data <- data %>%
   mutate(week = format(date, "%Y-%W")) %>%
@@ -115,9 +116,6 @@ print(monthly_aggregated)
 # Agréger les données par semaine
 weekly_aggregated <- aggregate(nombre_accidents ~ format(date, "%Y-%U"), data = data, FUN = sum)
 print(weekly_aggregated)
-
-
-#print(data)
 
 
 # Clément 1.5 (bonus)
