@@ -51,9 +51,7 @@ barplot(ville_plus_touche, las=2) # las met les nom des villes à la verticale
 #2.Créer des histogrammes
 # Quantité d’accidents en fonction des tranches d’âges
   #Chloé
-
 data <- read.csv("stat_acc_V3.csv", sep=";")
-
 # Convertir la colonne "age" en type numérique
 data$age <- as.numeric(data$age)
 # Créer des tranches d'âge

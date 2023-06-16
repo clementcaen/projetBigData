@@ -69,7 +69,7 @@ col_grav<- function(donnee){
  # Comparer les résultats obtenus par les deux régressions mentionnées ci-dessus
   # Analyser les performances de la régression (proportion de la variabilité due aux résidus et aux variables ex.)
    #Chloé
-performance_regression <- function(){
+performance_regression <- function(data){
   # Division de la base de données en ensembles d'entraînement et de test pour l'agrégation mensuelle
   train_monthly <- monthly_data[1:round(0.7 * nrow(monthly_data)), ]
   test_monthly <- monthly_data[(round(0.7 * nrow(monthly_data)) + 1):nrow(monthly_data), ]
@@ -96,13 +96,13 @@ performance_regression <- function(){
   print("Résultats pour l'agrégation hebdomadaire:")
   print(rmse_weekly)
 }
-#performance_regression()
+#performance_regression(data)
 
 
   # Analyser des erreurs types associés aux estimateurs
    #Chloé
 # Créer la série chronologique par mois
-mensuel <- function (){
+mensuel <- function (data){
   monthly_data <- data %>%
   mutate(month = format(date, "%Y-%m")) %>%
   group_by(month) %>%
@@ -145,9 +145,9 @@ mensuel <- function (){
   print(monthly_ci)
 
 }
-mensuel()
+#mensuel(data)
 
-hebdomadaire <- function (){
+hebdomadaire <- function (data){
   # Créer la série chronologique par semaine
   weekly_data <- data %>%
     mutate(week = format(date, "%Y-%W")) %>%
@@ -192,95 +192,105 @@ cat("Intervalles de confiance à 95% pour les données hebdomadaires:\n")
 print(weekly_ci)
 
 }
-hebdomadaire()
+#hebdomadaire(data)
 
    # Calculer les R2 et R2 ajusté pour les deux modèles. 
    #Chloé
-
-# Mensuel
-monthly_data <- data %>%
-  mutate(month = format(date, "%Y-%m")) %>%
-  group_by(month) %>%
-  summarise(total_accidents = n())
-# Ajuster un modèle de régression linéaire pour les données mensuelles
-lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
-# Calculer le coefficient de détermination (R²) pour chaque modèle
-r_squared_monthly <- summary(lm_monthly)$r.squared
-# Afficher les résultats
-cat("R² pour les données mensuelles :", r_squared_monthly, "\n")
-# Tracer les graphiques de régression pour les deux modèles
-ggplot(monthly_data, aes(x = as.numeric(as.Date(paste0(month, "-01"))), y = total_accidents)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +
-  labs(x = "Mois", y = "Nombre d'accidents", title = "Régression linéaire - Données mensuelles")
+r2_sansintervale_confiance_mensuel <- function (data){
+  # Mensuel
+  monthly_data <- data %>%
+    mutate(month = format(date, "%Y-%m")) %>%
+    group_by(month) %>%
+    summarise(total_accidents = n())
+  # Ajuster un modèle de régression linéaire pour les données mensuelles
+  lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
+  # Calculer le coefficient de détermination (R²) pour chaque modèle
+  r_squared_monthly <- summary(lm_monthly)$r.squared
+  # Afficher les résultats
+  cat("R² pour les données mensuelles :", r_squared_monthly, "\n")
+  # Tracer les graphiques de régression pour les deux modèles
+  ggplot(monthly_data, aes(x = as.numeric(as.Date(paste0(month, "-01"))), y = total_accidents)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE, color = "blue") +
+    labs(x = "Mois", y = "Nombre d'accidents", title = "Régression linéaire - Données mensuelles")
+}
+#r2_sansintervale_confiance_mensuel(data)
 
 #semaine
-weekly_data <- data %>%
-  mutate(week = format(date, "%Y-%W")) %>%
-  group_by(week) %>%
-  summarise(total_accidents = n())
-# Ajuster un modèle de régression linéaire pour les données hebdomadaires
-lm_weekly <- lm(total_accidents ~ as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")), data = weekly_data)
-# Calculer le coefficient de détermination (R²) pour chaque modèle
-r_squared_weekly <- summary(lm_weekly)$r.squared
-# Afficher les résultats
-cat("R² pour les données hebdomadaires :", r_squared_weekly, "\n")
-# Tracer les graphiques de régression pour les deux modèles
+r2_sansintervale_confiance_hebdo <- function (data){
+  weekly_data <- data %>%
+    mutate(week = format(date, "%Y-%W")) %>%
+    group_by(week) %>%
+    summarise(total_accidents = n())
+  # Ajuster un modèle de régression linéaire pour les données hebdomadaires
+  lm_weekly <- lm(total_accidents ~ as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")), data = weekly_data)
+  # Calculer le coefficient de détermination (R²) pour chaque modèle
+  r_squared_weekly <- summary(lm_weekly)$r.squared
+  # Afficher les résultats
+  cat("R² pour les données hebdomadaires :", r_squared_weekly, "\n")
+  # Tracer les graphiques de régression pour les deux modèles
 
-ggplot(weekly_data, aes(x = as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")), y = total_accidents)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +
-  labs(x = "Semaine", y = "Nombre d'accidents", title = "Régression linéaire - Données hebdomadaires")
+  ggplot(weekly_data, aes(x = as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")), y = total_accidents)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE, color = "blue") +
+    labs(x = "Semaine", y = "Nombre d'accidents", title = "Régression linéaire - Données hebdomadaires")
+}
+#r2_sansintervale_confiance_hebdo(data)
 
 # Mensuel sur intervalle de confiance
-# Créer la série chronologique par mois
-monthly_data <- data %>%
-  mutate(month = format(date, "%Y-%m")) %>%
-  group_by(month) %>%
-  summarise(total_accidents = n())
+r2_avecintervale_confiance_mensuel <- function (data){
+  # Créer la série chronologique par mois
+  monthly_data <- data %>%
+    mutate(month = format(date, "%Y-%m")) %>%
+    group_by(month) %>%
+    summarise(total_accidents = n())
 
-# Ajuster un modèle de régression linéaire pour les données mensuelles
-lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
+  # Ajuster un modèle de régression linéaire pour les données mensuelles
+  lm_monthly <- lm(total_accidents ~ as.numeric(as.Date(paste0(month, "-01"))), data = monthly_data)
 
-# Calculer les intervalles de confiance à 95% pour les données mensuelles
-monthly_ci <- predict(lm_monthly, interval = "confidence", level = 0.95)
+  # Calculer les intervalles de confiance à 95% pour les données mensuelles
+  monthly_ci <- predict(lm_monthly, interval = "confidence", level = 0.95)
 
-# Créer les dataframes pour le tracé
-monthly_plot_data <- data.frame(x = as.numeric(as.Date(paste0(monthly_data$month, "-01"))),
-                                y = monthly_data$total_accidents,
-                                lower_bound = monthly_ci[, "lwr"],
-                                upper_bound = monthly_ci[, "upr"])
+  # Créer les dataframes pour le tracé
+  monthly_plot_data <- data.frame(x = as.numeric(as.Date(paste0(monthly_data$month, "-01"))),
+                                  y = monthly_data$total_accidents,
+                                  lower_bound = monthly_ci[, "lwr"],
+                                  upper_bound = monthly_ci[, "upr"])
 
 
-# Tracer le graphique avec les intervalles de confiance pour les données mensuelles
-ggplot(monthly_plot_data, aes(x = x, y = y)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +
-  geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), alpha = 0.3, fill = "blue") +
-  labs(x = "Mois", y = "Nombre d'accidents", title = "Régression linéaire - Données mensuelles")
+  # Tracer le graphique avec les intervalles de confiance pour les données mensuelles
+  ggplot(monthly_plot_data, aes(x = x, y = y)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE, color = "blue") +
+    geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), alpha = 0.3, fill = "blue") +
+    labs(x = "Mois", y = "Nombre d'accidents", title = "Régression linéaire - Données mensuelles")
+}
+#r2_avecintervale_confiance_mensuel(data)
 
 # Hebdomadaire sur intervalle de confiance
-# Créer la série chronologique par semaine
-weekly_data <- data %>%
-  mutate(week = format(date, "%Y-%W")) %>%
-  group_by(week) %>%
-  summarise(total_accidents = n())
+r2_avecintervale_confiance_hebdo <- function (data){
+  # Créer la série chronologique par semaine
+  weekly_data <- data %>%
+    mutate(week = format(date, "%Y-%W")) %>%
+    group_by(week) %>%
+    summarise(total_accidents = n())
 
-# Ajuster un modèle de régression linéaire pour les données hebdomadaires
-lm_weekly <- lm(total_accidents ~ as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")), data = weekly_data)
+  # Ajuster un modèle de régression linéaire pour les données hebdomadaires
+  lm_weekly <- lm(total_accidents ~ as.numeric(as.Date(paste0(week, "-1"), "%Y-%U-%u")), data = weekly_data)
 
-# Calculer les intervalles de confiance à 95% pour les données hebdomadaires
-weekly_ci <- predict(lm_weekly, interval = "confidence", level = 0.95)
+  # Calculer les intervalles de confiance à 95% pour les données hebdomadaires
+  weekly_ci <- predict(lm_weekly, interval = "confidence", level = 0.95)
 
-weekly_plot_data <- data.frame(x = as.numeric(as.Date(paste0(weekly_data$week, "-1"), "%Y-%U-%u")),
-                               y = weekly_data$total_accidents,
-                               lower_bound = weekly_ci[, "lwr"],
-                               upper_bound = weekly_ci[, "upr"])
+  weekly_plot_data <- data.frame(x = as.numeric(as.Date(paste0(weekly_data$week, "-1"), "%Y-%U-%u")),
+                                 y = weekly_data$total_accidents,
+                                 lower_bound = weekly_ci[, "lwr"],
+                                 upper_bound = weekly_ci[, "upr"])
 
-# Graphique avec les intervalles de confiance pour les données hebdomadaires
-ggplot(weekly_plot_data, aes(x = x, y = y)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +
-  geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), alpha = 0.3, fill = "blue") +
+  # Graphique avec les intervalles de confiance pour les données hebdomadaires
+  ggplot(weekly_plot_data, aes(x = x, y = y)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE, color = "blue") +
+    geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), alpha = 0.3, fill = "blue") +
   labs(x = "Semaine", y = "Nombre d'accidents", title = "Régression linéaire - Données hebdomadaires")
-
+}
+#r2_avecintervale_confiance_hebdo(data)
