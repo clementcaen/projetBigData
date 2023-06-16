@@ -40,5 +40,13 @@ vehicule_agglo<- function(donnee){
   resultats_chi2 <- chisq.test(tableau_croise)
 }
 
-print(secu_grav(dataV2))
+col_grav<- function(donnee){
+  tableau_croise <- table(donnee$descr_type_col, donnee$descr_grav)
+  print(tableau_croise)
+  couleurs <- c("#B3D9FF", "#B3FFD9","#FFD9B3" , "#FFB3D9", "#D9B3FF", "#D9FFB3")
+  mosaicplot(tableau_croise, main = "Tableau croisé du type de collision et de la gravité", xlab = "type de collision", ylab = "gravité", color=couleurs)  
+  resultats_chi2 <- chisq.test(tableau_croise)
+}
+
+print(col_grav(dataV2))
 
