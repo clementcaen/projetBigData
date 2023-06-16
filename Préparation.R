@@ -76,46 +76,48 @@ data <- convert_tableau(data)
 
 #Chloé 1.4
 
-#Evolution par mois du nombre d’accident
+# Evolution par mois du nombre d'accidents
 
-library(dplyr) # manipulation de donnée
-library(ggplot2) # réalisation de graphique
+library(dplyr) # manipulation de données
+library(ggplot2) # réalisation de graphiques
 
-data <- read.csv("stat_acc_V3.csv", sep=";")
+data <- read.csv("C:/Users/chloe OBIANG/Downloads/stat_acc_V3.csv", sep=";")
 # Convertir la colonne "date" en type "Date"
 data$date <- as.Date(data$date)
+
 # Créer la série chronologique par mois
 monthly_data <- data %>%
   mutate(month = format(date, "%Y-%m")) %>%
   group_by(month) %>%
   summarise(total_accidents = n())
+
 # Tracer la série chronologique par mois
 ggplot(monthly_data, aes(x = as.Date(paste0(month, "-01")), y = total_accidents)) +
   geom_line() +
   labs(x = "Mois", y = "Nombre d'accidents", title = "Évolution mensuelle du nombre d'accidents")
 
-#Evolution par semaine du nombre d’accident
-
-library(dplyr)
-library(ggplot2)
+# Evolution par semaine du nombre d'accidents
 
 # Créer la série chronologique par semaine
 weekly_data <- data %>%
-  mutate(week = format(date, "%Y-%W")) %>%
+  mutate(week = format(date, "%Y-%U")) %>%
   group_by(week) %>%
   summarise(total_accidents = n())
+
 # Tracer la série chronologique par semaine
 ggplot(weekly_data, aes(x = as.Date(paste0(week, "-1"), "%Y-%U-%u"), y = total_accidents)) +
   geom_line() +
   labs(x = "Semaine", y = "Nombre d'accidents", title = "Évolution hebdomadaire du nombre d'accidents")
 
+
 # Agréger les données par mois
-monthly_aggregated <- aggregate(total_accidents ~ format(date, "%Y-%m"), data = data, FUN = sum)
+monthly_aggregated <- aggregate(total_accidents ~ month, data = monthly_data, FUN = length)
 print(monthly_aggregated)
 
 # Agréger les données par semaine
-weekly_aggregated <- aggregate(total_accidents ~ format(date, "%Y-%U"), data = data, FUN = sum)
+weekly_aggregated <- aggregate(total_accidents ~ week, data = weekly_data, FUN = length)
 print(weekly_aggregated)
+
 
 
 # Clément 1.5 (bonus)
